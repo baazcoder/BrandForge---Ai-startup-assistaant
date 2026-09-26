@@ -272,6 +272,36 @@ class DeliverResponse(BaseModel):
     # 08 Final Recommendation
     next_steps: list[str] = Field(..., description="Prioritized list of immediate actionable next steps for launch.")
 
+# Phase 7: Evaluate Models
+class EvaluationItem(BaseModel):
+    area: str = Field(..., description="Evaluation category area (e.g., Problem ↔ Audience, Problem ↔ Value Proposition, Position ↔ Differentiation, Messaging ↔ Audience, Verbal ↔ Visual, Challenge ↔ Deliver).")
+    status: str = Field(..., description="Status of consistency check: 'consistent', 'needs_attention', or 'inconsistent'.")
+    finding: str = Field(..., description="Detailed observation explaining the evaluation finding.")
+    evidence: str = Field(..., description="Specific evidence from previous stage outputs supporting this finding.")
+    recommendation: str = Field(..., description="Actionable recommendation to resolve inconsistency or elevate quality.")
+
+class PriorityAction(BaseModel):
+    priority: str = Field(..., description="Priority level: 'high', 'medium', or 'low'.")
+    area: str = Field(..., description="Strategic area needing action.")
+    problem: str = Field(..., description="Description of the friction, risk, or weakness.")
+    recommended_action: str = Field(..., description="Concrete, actionable step to execute.")
+
+class EvaluateRequest(BaseModel):
+    discover_context: DiscoverResponse = Field(..., description="Phase 1 Discover context.")
+    position_context: PositionResponse = Field(..., description="Phase 2 Position context.")
+    shape_context: ShapeResponse = Field(..., description="Phase 3 Shape context.")
+    visualize_context: VisualizeResponse = Field(..., description="Phase 4 Visualize context.")
+    challenge_context: ChallengeResponse = Field(..., description="Phase 5 Challenge context.")
+    deliver_context: DeliverResponse = Field(..., description="Phase 6 Deliver context.")
+
+class EvaluateResponse(BaseModel):
+    overall_status: str = Field(..., description="Overall strategic status: 'strong', 'needs_review', or 'high_risk'.")
+    overall_summary: str = Field(..., description="Comprehensive summary of brand strategy coherence and quality.")
+    consistency_checks: list[EvaluationItem] = Field(..., description="Detailed consistency evaluations across key cross-stage dimensions.")
+    priority_actions: list[PriorityAction] = Field(..., description="3 to 7 prioritized actionable recommendations.")
+    human_review_items: list[str] = Field(..., description="Items requiring empirical real-world human validation (e.g., customer interviews, trademark search, pricing validation).")
+
+
 
 
 

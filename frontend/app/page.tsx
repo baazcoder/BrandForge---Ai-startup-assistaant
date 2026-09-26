@@ -9,6 +9,7 @@ import { ShapeSection } from "../components/ShapeSection";
 import { VisualizeSection } from "../components/VisualizeSection";
 import { ChallengeSection } from "../components/ChallengeSection";
 import { DeliverSection } from "../components/DeliverSection";
+import { EvaluationSection } from "../components/EvaluationSection";
 import {
   discoverIdea,
   generatePosition,
@@ -16,12 +17,14 @@ import {
   generateVisualize,
   generateChallenge,
   generateDeliver,
+  generateEvaluation,
   DiscoverResponse,
   PositionResponse,
   ShapeResponse,
   VisualizeResponse,
   ChallengeResponse,
-  DeliverResponse
+  DeliverResponse,
+  EvaluateResponse
 } from "../lib/api";
 
 export default function Home() {
@@ -54,6 +57,11 @@ export default function Home() {
   const [isDeliverLoading, setIsDeliverLoading] = useState<boolean>(false);
   const [deliverError, setDeliverError] = useState<string | null>(null);
 
+  // Phase 7 Evaluate States
+  const [evaluationResults, setEvaluationResults] = useState<EvaluateResponse | null>(null);
+  const [isEvaluationLoading, setIsEvaluationLoading] = useState<boolean>(false);
+  const [evaluationError, setEvaluationError] = useState<string | null>(null);
+
   const handleSubmit = async (idea: string) => {
     setIsLoading(true);
     setError(null);
@@ -67,6 +75,8 @@ export default function Home() {
     setChallengeError(null);
     setDeliverResults(null);
     setDeliverError(null);
+    setEvaluationResults(null);
+    setEvaluationError(null);
 
     try {
       const data = await discoverIdea(idea);
@@ -207,6 +217,30 @@ export default function Home() {
     }
   };
 
+  const handleBuildEvaluate = async () => {
+    if (!results || !positionResults || !shapeResults || !visualizeResults || !challengeResults || !deliverResults) return;
+    setIsEvaluationLoading(true);
+    setEvaluationError(null);
+
+    try {
+      const evalData = await generateEvaluation(results, positionResults, shapeResults, visualizeResults, challengeResults, deliverResults);
+      setEvaluationResults(evalData);
+      setTimeout(() => {
+        const el = document.getElementById("evaluate-stage-section");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    } catch (err: unknown) {
+      console.error("Evaluation workflow error:", err);
+      if (err instanceof Error) {
+        setEvaluationError(err.message);
+      } else {
+        setEvaluationError("An unexpected error occurred while running the brand evaluation audit.");
+      }
+    } finally {
+      setIsEvaluationLoading(false);
+    }
+  };
+
   const handleProceedToVisualize = () => {
     setTimeout(() => {
       const el = document.getElementById("visualize-stage-section");
@@ -234,6 +268,15 @@ export default function Home() {
     }, 50);
   };
 
+  const handleProceedToEvaluate = () => {
+    setTimeout(() => {
+      const el = document.getElementById("evaluate-stage-section");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 50);
+  };
+
   const handleReset = () => {
     setResults(null);
     setPositionResults(null);
@@ -241,16 +284,18 @@ export default function Home() {
     setVisualizeResults(null);
     setChallengeResults(null);
     setDeliverResults(null);
+    setEvaluationResults(null);
     setError(null);
     setPositionError(null);
     setShapeError(null);
     setVisualizeError(null);
     setChallengeError(null);
     setDeliverError(null);
+    setEvaluationError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const activeStage = deliverResults ? 6 : (challengeResults ? 5 : (visualizeResults ? 4 : (shapeResults ? 3 : (positionResults ? 2 : 1))));
+  const activeStage = evaluationResults ? 7 : (deliverResults ? 6 : (challengeResults ? 5 : (visualizeResults ? 4 : (shapeResults ? 3 : (positionResults ? 2 : 1)))));
 
   return (
     <div className="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
@@ -329,6 +374,22 @@ export default function Home() {
                   onBuildDeliver={handleBuildDeliver}
                   isLoading={isDeliverLoading}
                   error={deliverError}
+                  onProceedToEvaluate={handleProceedToEvaluate}
+                />
+              )}
+
+              {positionResults && shapeResults && visualizeResults && challengeResults && deliverResults && (
+                <EvaluationSection
+                  discoverContext={results}
+                  positionContext={positionResults}
+                  shapeContext={shapeResults}
+                  visualizeContext={visualizeResults}
+                  challengeContext={challengeResults}
+                  deliverContext={deliverResults}
+                  evaluationData={evaluationResults}
+                  onBuildEvaluate={handleBuildEvaluate}
+                  isLoading={isEvaluationLoading}
+                  error={evaluationError}
                 />
               )}
             </>
@@ -337,8 +398,15 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500 font-mono">
-        BrandForge — AI-Powered Brand Strategy Engine (Phases 1–6: Discover, Position, Shape, Visualize, Challenge & Deliver)
+      <footer className="border-t border-slate-800/80 bg-slate-950/60 py-8 px-4 text-center text-xs text-slate-400 font-mono space-y-2">
+        <div className="flex items-center justify-center gap-2 text-slate-300">
+          <span className="font-bold text-white tracking-tight font-mono">Brand<span className="text-indigo-400">Forge</span></span>
+          <span className="text-slate-600">•</span>
+          <span>7-Stage Sequential AI Strategy Engine</span>
+        </div>
+        <p className="text-slate-500 max-w-md mx-auto">
+          Phases 1–7: Discover, Position, Shape, Visualize, Challenge, Deliver & Quality Evaluation.
+        </p>
       </footer>
     </div>
   );

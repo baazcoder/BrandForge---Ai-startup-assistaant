@@ -222,6 +222,38 @@ export interface DeliverRequest {
   challenge_context: ChallengeResponse;
 }
 
+export interface EvaluationItem {
+  area: string;
+  status: "consistent" | "needs_attention" | "inconsistent" | string;
+  finding: string;
+  evidence: string;
+  recommendation: string;
+}
+
+export interface PriorityAction {
+  priority: "high" | "medium" | "low" | string;
+  area: string;
+  problem: string;
+  recommended_action: string;
+}
+
+export interface EvaluateResponse {
+  overall_status: "strong" | "needs_review" | "high_risk" | string;
+  overall_summary: string;
+  consistency_checks: EvaluationItem[];
+  priority_actions: PriorityAction[];
+  human_review_items: string[];
+}
+
+export interface EvaluateRequest {
+  discover_context: DiscoverResponse;
+  position_context: PositionResponse;
+  shape_context: ShapeResponse;
+  visualize_context: VisualizeResponse;
+  challenge_context: ChallengeResponse;
+  deliver_context: DeliverResponse;
+}
+
 function getApiEndpoint(): string {
   let base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim().replace(/\/+$/, "");
   if (base.endsWith("/api")) {
@@ -268,6 +300,14 @@ function getDeliverEndpoint(): string {
     return `${base}/deliver`;
   }
   return `${base}/api/deliver`;
+}
+
+function getEvaluateEndpoint(): string {
+  let base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim().replace(/\/+$/, "");
+  if (base.endsWith("/api")) {
+    return `${base}/evaluate`;
+  }
+  return `${base}/api/evaluate`;
 }
 
 export async function discoverIdea(idea: string): Promise<DiscoverResponse> {
@@ -756,5 +796,100 @@ export async function generateDeliver(
   console.log("[Frontend API] Normalized DeliverResponse:", normalized);
   return normalized;
 }
+
+export async function generateEvaluation(
+  discoverContext: DiscoverResponse,
+  positionContext: PositionResponse,
+  shapeContext: ShapeResponse,
+  visualizeContext: VisualizeResponse,
+  challengeContext: ChallengeResponse,
+  deliverContext: DeliverResponse
+): Promise<EvaluateResponse> {
+  if (!discoverContext || !discoverContext.problem) {
+    throw new Error("Valid Phase 1 Discover context is required for Phase 7 Evaluation.");
+  }
+  if (!positionContext || !positionContext.category) {
+    throw new Error("Valid Phase 2 Position context is required for Phase 7 Evaluation.");
+  }
+  if (!shapeContext || !shapeContext.tagline) {
+    throw new Error("Valid Phase 3 Shape context is required for Phase 7 Evaluation.");
+  }
+  if (!visualizeContext || !visualizeContext.typography) {
+    throw new Error("Valid Phase 4 Visualize context is required for Phase 7 Evaluation.");
+  }
+  if (!challengeContext || !challengeContext.challenge_summary) {
+    throw new Error("Valid Phase 5 Challenge context is required for Phase 7 Evaluation.");
+  }
+  if (!deliverContext || !deliverContext.brand_name) {
+    throw new Error("Valid Phase 6 Deliver context is required for Phase 7 Evaluation.");
+  }
+
+  const endpoint = getEvaluateEndpoint();
+  console.log(`[Frontend API] Sending Evaluate POST request to: ${endpoint}`);
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        discover_context: discoverContext,
+        position_context: positionContext,
+        shape_context: shapeContext,
+        visualize_context: visualizeContext,
+        challenge_context: challengeContext,
+        deliver_context: deliverContext,
+      }),
+    });
+  } catch (err: unknown) {
+    console.error("[Frontend API] Evaluate network error:", err);
+    throw new Error(`Unable to connect to backend server at ${endpoint}. Please ensure backend is running.`);
+  }
+
+  console.log(`[Frontend API] Evaluate HTTP Status: ${response.status} ${response.statusText}`);
+
+  if (!response.ok) {
+    let errorMessage = `Server error (${response.status})`;
+    try {
+      const errorData = await response.json();
+      console.error("[Frontend API] Evaluate Error Payload:", errorData);
+      if (errorData && errorData.detail) {
+        errorMessage = typeof errorData.detail === "string" ? errorData.detail : JSON.stringify(errorData.detail);
+      }
+    } catch {
+      // Ignore JSON parse error
+    }
+    throw new Error(errorMessage);
+  }
+
+  const rawJson = await response.json();
+  console.log("[Frontend API] Parsed Evaluate Response Body:", rawJson);
+
+  let targetObj: any = rawJson;
+  if (rawJson && typeof rawJson === "object") {
+    if ("evaluate" in rawJson && rawJson.evaluate) targetObj = rawJson.evaluate;
+    else if ("evaluation" in rawJson && rawJson.evaluation) targetObj = rawJson.evaluation;
+    else if ("result" in rawJson && rawJson.result) targetObj = rawJson.result;
+    else if ("data" in rawJson && rawJson.data) targetObj = rawJson.data;
+  }
+
+  const normalized: EvaluateResponse = {
+    overall_status: targetObj.overall_status || "needs_review",
+    overall_summary: targetObj.overall_summary || "",
+    consistency_checks: Array.isArray(targetObj.consistency_checks) ? targetObj.consistency_checks : [],
+    priority_actions: Array.isArray(targetObj.priority_actions) ? targetObj.priority_actions : [],
+    human_review_items: Array.isArray(targetObj.human_review_items) ? targetObj.human_review_items : [],
+  };
+
+  if (!normalized.overall_summary || normalized.consistency_checks.length === 0) {
+    throw new Error("Invalid evaluate response structure: missing required evaluation fields.");
+  }
+
+  console.log("[Frontend API] Normalized EvaluateResponse:", normalized);
+  return normalized;
+}
+
 
 

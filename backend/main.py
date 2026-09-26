@@ -10,7 +10,8 @@ from models import (
     ShapeRequest, ShapeResponse,
     VisualizeRequest, VisualizeResponse,
     ChallengeRequest, ChallengeResponse,
-    DeliverRequest, DeliverResponse
+    DeliverRequest, DeliverResponse,
+    EvaluateRequest, EvaluateResponse
 )
 from services.discover import analyze_idea
 from services.position import analyze_position
@@ -18,6 +19,7 @@ from services.shape import analyze_shape
 from services.visualize import analyze_visualize
 from services.challenge import analyze_challenge
 from services.deliver import analyze_deliver
+from services.evaluate import analyze_evaluation
 
 # Load environment variables from .env file if present
 load_dotenv()
@@ -27,8 +29,8 @@ logger = logging.getLogger("brandforge.main")
 
 app = FastAPI(
     title="BrandForge AI Backend",
-    description="Phases 1-6 API for transforming rough product ideas into structured discovery, positioning, verbal identity, visual strategy, critical challenge evaluation, and final launch-ready Brand Kit delivery.",
-    version="1.6.0"
+    description="Phases 1-7 API for transforming rough product ideas into structured discovery, positioning, verbal identity, visual strategy, critical challenge evaluation, launch-ready Brand Kit delivery, and brand consistency evaluation.",
+    version="1.7.0"
 )
 
 # CORS Configuration
@@ -44,9 +46,9 @@ app.add_middleware(
 def read_root():
     return {
         "app": "BrandForge API",
-        "phase": 6,
+        "phase": 7,
         "status": "online",
-        "stages": ["Discover", "Position", "Shape", "Visualize", "Challenge", "Deliver"]
+        "stages": ["Discover", "Position", "Shape", "Visualize", "Challenge", "Deliver", "Evaluate"]
     }
 
 @app.post(
@@ -340,11 +342,80 @@ async def generate_deliver(payload: DeliverRequest):
             detail="AI deliver synthesis service encountered an error processing your request. Please try again."
         )
 
+@app.post(
+    "/api/evaluate",
+    response_model=EvaluateResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Critically evaluate holistic brand strategy consistency and quality across Phases 1-6"
+)
+@app.post(
+    "/evaluate",
+    response_model=EvaluateResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False
+)
+async def generate_evaluation(payload: EvaluateRequest):
+    if not payload.discover_context or not payload.discover_context.problem:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 1 Discover context is required for Evaluation."
+        )
+    if not payload.position_context or not payload.position_context.category:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 2 Position context is required for Evaluation."
+        )
+    if not payload.shape_context or not payload.shape_context.tagline:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 3 Shape context is required for Evaluation."
+        )
+    if not payload.visualize_context or not payload.visualize_context.typography:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 4 Visualize context is required for Evaluation."
+        )
+    if not payload.challenge_context or not payload.challenge_context.challenge_summary:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 5 Challenge context is required for Evaluation."
+        )
+    if not payload.deliver_context or not payload.deliver_context.brand_name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 6 Deliver context is required for Evaluation."
+        )
+
+    try:
+        result = analyze_evaluation(
+            payload.discover_context,
+            payload.position_context,
+            payload.shape_context,
+            payload.visualize_context,
+            payload.challenge_context,
+            payload.deliver_context
+        )
+        logger.info(f"[BACKEND SUCCESS] Returning EvaluateResponse: {result.model_dump_json()}")
+        return result
+    except ValueError as val_err:
+        logger.warning(f"Validation or configuration error in evaluate service: {val_err}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err)
+        )
+    except Exception as exc:
+        logger.error(f"Unexpected error during brand evaluation: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="AI brand evaluation service encountered an error processing your request. Please try again."
+        )
+
 
 if __name__ == "__main__":
     import uvicorn
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "8000"))
     uvicorn.run("main:app", host=host, port=port, reload=True)
+
 
 
