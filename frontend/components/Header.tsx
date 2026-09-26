@@ -69,6 +69,15 @@ export const Header: React.FC<HeaderProps> = ({ activeStage = 1 }) => {
             <Compass className="w-3.5 h-3.5 text-rose-400" />
             <span>Phase 5: Challenge</span>
           </div>
+
+          <div className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 transition ${
+            activeStage === 6
+              ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 shadow-sm"
+              : "bg-slate-800/60 border border-slate-700/50 text-slate-400"
+          }`}>
+            <Compass className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Phase 6: Deliver</span>
+          </div>
         </div>
       </div>
     </header>

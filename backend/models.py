@@ -227,6 +227,52 @@ class ChallengeResponse(BaseModel):
     challenge_summary: str = Field(..., description="Concise overall summary of the critical evaluation.")
     recommended_changes: list[str] = Field(..., description="Prioritized list of highest-impact changes recommended before delivery.")
 
+# Phase 6: Deliver Models
+class DeliverRequest(BaseModel):
+    discover_context: DiscoverResponse = Field(..., description="Structured insights output from Phase 1 Discover stage.")
+    position_context: PositionResponse = Field(..., description="Structured output from Phase 2 Position stage.")
+    shape_context: ShapeResponse = Field(..., description="Structured output from Phase 3 Shape stage.")
+    visualize_context: VisualizeResponse = Field(..., description="Structured output from Phase 4 Visualize stage.")
+    challenge_context: ChallengeResponse = Field(..., description="Structured output from Phase 5 Challenge stage.")
+
+class DeliverResponse(BaseModel):
+    # 01 Brand Overview
+    brand_name: str = Field(..., description="The definitive brand name selected for launch.")
+    one_line_pitch: str = Field(..., description="Concise one-sentence pitch summarizing what the brand offers.")
+    brand_summary: str = Field(..., description="Coherent summary of the overall brand identity and strategic positioning.")
+
+    # 02 Core Messaging
+    hero_headline: str = Field(..., description="Impactful main headline for website hero section.")
+    hero_subheadline: str = Field(..., description="Supporting subheadline explaining the primary benefit.")
+    value_proposition: str = Field(..., description="Clear, compelling value proposition statement.")
+    product_description: str = Field(..., description="Rich product description articulating core capabilities.")
+    primary_cta: str = Field(..., description="Action-oriented primary Call-To-Action button copy.")
+
+    # 03 Audience
+    target_audience_summary: str = Field(..., description="Summary of the core target audience persona.")
+    core_problem: str = Field(..., description="The fundamental problem being solved for the user.")
+
+    # 04 Brand Voice
+    tone_of_voice: str = Field(..., description="Summary description of the brand's communication tone.")
+    messaging_guidelines: list[str] = Field(..., description="Actionable guidelines for writing brand messaging.")
+    brand_personality: list[str] = Field(..., description="Key personality traits defining the brand.")
+
+    # 05 Launch Copy
+    launch_announcement: str = Field(..., description="Polished product launch announcement copy.")
+    social_media_posts: list[str] = Field(..., description="Ready-to-use launch social media posts.")
+
+    # 06 Brand Direction
+    visual_identity_summary: str = Field(..., description="Synthesized direction for visual aesthetics, color, and typography.")
+    key_brand_pillars: list[str] = Field(..., description="Core foundational pillars of the brand.")
+
+    # 07 Risk / Validation
+    key_risks: list[str] = Field(..., description="Primary risks and weak assumptions identified in Challenge stage.")
+    risk_mitigation_summary: str = Field(..., description="Strategic summary of how to mitigate identified risks.")
+
+    # 08 Final Recommendation
+    next_steps: list[str] = Field(..., description="Prioritized list of immediate actionable next steps for launch.")
+
+
 
 
 

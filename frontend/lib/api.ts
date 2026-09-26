@@ -191,6 +191,36 @@ export interface ChallengeRequest {
   visualize_context: VisualizeResponse;
 }
 
+export interface DeliverResponse {
+  brand_name: string;
+  one_line_pitch: string;
+  brand_summary: string;
+  hero_headline: string;
+  hero_subheadline: string;
+  value_proposition: string;
+  product_description: string;
+  primary_cta: string;
+  target_audience_summary: string;
+  core_problem: string;
+  tone_of_voice: string;
+  messaging_guidelines: string[];
+  brand_personality: string[];
+  launch_announcement: string;
+  social_media_posts: string[];
+  visual_identity_summary: string;
+  key_brand_pillars: string[];
+  key_risks: string[];
+  risk_mitigation_summary: string;
+  next_steps: string[];
+}
+
+export interface DeliverRequest {
+  discover_context: DiscoverResponse;
+  position_context: PositionResponse;
+  shape_context: ShapeResponse;
+  visualize_context: VisualizeResponse;
+  challenge_context: ChallengeResponse;
+}
 
 function getApiEndpoint(): string {
   let base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim().replace(/\/+$/, "");
@@ -230,6 +260,14 @@ function getChallengeEndpoint(): string {
     return `${base}/challenge`;
   }
   return `${base}/api/challenge`;
+}
+
+function getDeliverEndpoint(): string {
+  let base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").trim().replace(/\/+$/, "");
+  if (base.endsWith("/api")) {
+    return `${base}/deliver`;
+  }
+  return `${base}/api/deliver`;
 }
 
 export async function discoverIdea(idea: string): Promise<DiscoverResponse> {
@@ -615,4 +653,108 @@ export async function generateChallenge(
   console.log("[Frontend API] Normalized ChallengeResponse:", normalized);
   return normalized;
 }
+
+export async function generateDeliver(
+  discoverContext: DiscoverResponse,
+  positionContext: PositionResponse,
+  shapeContext: ShapeResponse,
+  visualizeContext: VisualizeResponse,
+  challengeContext: ChallengeResponse
+): Promise<DeliverResponse> {
+  if (!discoverContext || !discoverContext.problem) {
+    throw new Error("Valid Phase 1 Discover context is required to synthesize Phase 6 Deliver Brand Kit.");
+  }
+  if (!positionContext || !positionContext.category) {
+    throw new Error("Valid Phase 2 Position context is required to synthesize Phase 6 Deliver Brand Kit.");
+  }
+  if (!shapeContext || !shapeContext.tagline) {
+    throw new Error("Valid Phase 3 Shape context is required to synthesize Phase 6 Deliver Brand Kit.");
+  }
+  if (!visualizeContext || !visualizeContext.typography) {
+    throw new Error("Valid Phase 4 Visualize context is required to synthesize Phase 6 Deliver Brand Kit.");
+  }
+  if (!challengeContext || !challengeContext.challenge_summary) {
+    throw new Error("Valid Phase 5 Challenge context is required to synthesize Phase 6 Deliver Brand Kit.");
+  }
+
+  const endpoint = getDeliverEndpoint();
+  console.log(`[Frontend API] Sending Deliver POST request to: ${endpoint}`);
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        discover_context: discoverContext,
+        position_context: positionContext,
+        shape_context: shapeContext,
+        visualize_context: visualizeContext,
+        challenge_context: challengeContext,
+      }),
+    });
+  } catch (err: unknown) {
+    console.error("[Frontend API] Deliver network error:", err);
+    throw new Error(`Unable to connect to backend server at ${endpoint}. Please ensure backend is running.`);
+  }
+
+  console.log(`[Frontend API] Deliver HTTP Status: ${response.status} ${response.statusText}`);
+
+  if (!response.ok) {
+    let errorMessage = `Server error (${response.status})`;
+    try {
+      const errorData = await response.json();
+      console.error("[Frontend API] Deliver Error Payload:", errorData);
+      if (errorData && errorData.detail) {
+        errorMessage = typeof errorData.detail === "string" ? errorData.detail : JSON.stringify(errorData.detail);
+      }
+    } catch {
+      // Ignore JSON parse error
+    }
+    throw new Error(errorMessage);
+  }
+
+  const rawJson = await response.json();
+  console.log("[Frontend API] Parsed Deliver Response Body:", rawJson);
+
+  let targetObj: any = rawJson;
+  if (rawJson && typeof rawJson === "object") {
+    if ("deliver" in rawJson && rawJson.deliver) targetObj = rawJson.deliver;
+    else if ("result" in rawJson && rawJson.result) targetObj = rawJson.result;
+    else if ("data" in rawJson && rawJson.data) targetObj = rawJson.data;
+  }
+
+  const normalized: DeliverResponse = {
+    brand_name: targetObj.brand_name || "",
+    one_line_pitch: targetObj.one_line_pitch || "",
+    brand_summary: targetObj.brand_summary || "",
+    hero_headline: targetObj.hero_headline || "",
+    hero_subheadline: targetObj.hero_subheadline || "",
+    value_proposition: targetObj.value_proposition || "",
+    product_description: targetObj.product_description || "",
+    primary_cta: targetObj.primary_cta || "",
+    target_audience_summary: targetObj.target_audience_summary || "",
+    core_problem: targetObj.core_problem || "",
+    tone_of_voice: targetObj.tone_of_voice || "",
+    messaging_guidelines: Array.isArray(targetObj.messaging_guidelines) ? targetObj.messaging_guidelines : [],
+    brand_personality: Array.isArray(targetObj.brand_personality) ? targetObj.brand_personality : [],
+    launch_announcement: targetObj.launch_announcement || "",
+    social_media_posts: Array.isArray(targetObj.social_media_posts) ? targetObj.social_media_posts : [],
+    visual_identity_summary: targetObj.visual_identity_summary || "",
+    key_brand_pillars: Array.isArray(targetObj.key_brand_pillars) ? targetObj.key_brand_pillars : [],
+    key_risks: Array.isArray(targetObj.key_risks) ? targetObj.key_risks : [],
+    risk_mitigation_summary: targetObj.risk_mitigation_summary || "",
+    next_steps: Array.isArray(targetObj.next_steps) ? targetObj.next_steps : [],
+  };
+
+  if (!normalized.brand_name || !normalized.one_line_pitch || !normalized.hero_headline) {
+    throw new Error("Invalid deliver response structure: missing required brand kit fields.");
+  }
+
+  console.log("[Frontend API] Normalized DeliverResponse:", normalized);
+  return normalized;
+}
+
 

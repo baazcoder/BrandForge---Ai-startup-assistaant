@@ -38,6 +38,7 @@ interface ChallengeSectionProps {
   onBuildChallenge: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  onProceedToDeliver?: () => void;
 }
 
 export const ChallengeSection: React.FC<ChallengeSectionProps> = ({
@@ -49,6 +50,7 @@ export const ChallengeSection: React.FC<ChallengeSectionProps> = ({
   onBuildChallenge,
   isLoading,
   error,
+  onProceedToDeliver,
 }) => {
   return (
     <div id="challenge-stage-section" className="w-full max-w-5xl mx-auto my-12 px-4 space-y-8 animate-fade-in">
@@ -423,6 +425,19 @@ export const ChallengeSection: React.FC<ChallengeSectionProps> = ({
               {challengeData.challenge_summary}
             </p>
           </div>
+
+          {/* CTA to Phase 6 Deliver */}
+          {onProceedToDeliver && (
+            <div className="pt-4 flex justify-center">
+              <button
+                onClick={onProceedToDeliver}
+                className="px-8 py-4 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/35 hover:scale-105 active:scale-95 transition duration-200 flex items-center gap-3 cursor-pointer"
+              >
+                <span>Proceed to Phase 6: Deliver (Final Brand Kit)</span>
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

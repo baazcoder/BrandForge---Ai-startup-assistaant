@@ -1,0 +1,27 @@
+[33mcommit 88a888c87f49721f755f619d0e4112c0c102b890[m[33m ([m[1;32mmain[m[33m)[m
+Author: shehbaz <sandhushehbaz582@gmail.com>
+Date:   Sat Sep 26 02:06:07 2026 +0530
+
+    added phase 1 - phase 5
+
+ backend/.env                                       |  11 [32m+[m
+ backend/.env.example                               |   9 [32m+[m
+ backend/__pycache__/main.cpython-313.pyc           | Bin [31m0[m -> [32m13326[m bytes
+ backend/__pycache__/models.cpython-313.pyc         | Bin [31m0[m -> [32m19921[m bytes
+ .../test_main.cpython-313-pytest-8.3.4.pyc         | Bin [31m0[m -> [32m45491[m bytes
+ .../test_main.cpython-313-pytest-9.1.1.pyc         | Bin [31m0[m -> [32m13404[m bytes
+ backend/main.py                                    | 285 [32m+++++++++++++++++++++[m
+ backend/models.py                                  | 232 [32m+++++++++++++++++[m
+ backend/requirements.txt                           |   5 [32m+[m
+ .../services/__pycache__/challenge.cpython-313.pyc | Bin [31m0[m -> [32m15247[m bytes
+ .../services/__pycache__/discover.cpython-313.pyc  | Bin [31m0[m -> [32m6330[m bytes
+ .../services/__pycache__/position.cpython-313.pyc  | Bin [31m0[m -> [32m9502[m bytes
+ backend/services/__pycache__/shape.cpython-313.pyc | Bin [31m0[m -> [32m10244[m bytes
+ .../services/__pycache__/visualize.cpython-313.pyc | Bin [31m0[m -> [32m12686[m bytes
+ backend/services/challenge.py                      | 226 [32m++++++++++++++++[m
+ backend/services/discover.py                       | 127 [32m+++++++++[m
+ backend/services/position.py                       | 163 [32m++++++++++++[m
+ backend/services/shape.py                          | 166 [32m++++++++++++[m
+ backend/services/visualize.py                      | 184 [32m+++++++++++++[m
+ backend/test_main.py                               | 233 [32m+++++++++++++++++[m
+ 20 files changed, 1641 insertions(+)

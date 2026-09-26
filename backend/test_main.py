@@ -228,6 +228,98 @@ def test_challenge_endpoint():
     assert "challenge_summary" in data and len(data["challenge_summary"].strip()) > 0
     assert "recommended_changes" in data and len(data["recommended_changes"]) > 0
 
+def test_deliver_missing_input():
+    response = client.post("/api/deliver", json={})
+    assert response.status_code == 422  # Validation error for missing body fields
+
+def test_deliver_endpoint():
+    discover_mock = {
+        "problem": "College students struggle to find compatible teammates for hackathons.",
+        "target_user": "Undergraduate students.",
+        "context": "Hackathons rapidly growing.",
+        "value": "Streamlines team formation.",
+        "pain_points": ["Skill mismatches"],
+        "constraints": ["Free budget"],
+        "assumptions": ["Students want skill-based matching"],
+        "open_questions": ["How will skills be verified?"]
+    }
+    position_mock = {
+        "category": "Teammate Discovery Platform",
+        "category_reason": "Directly targets academic and hackathon team search.",
+        "differentiator": "Skill-complementarity matching.",
+        "differentiator_reason": "Eliminates random partner pairing.",
+        "value_proposition": "Fast, high-quality team assembly.",
+        "value_proposition_reason": "Addresses key pain points.",
+        "competitive_angle": "Dedicated matching utility.",
+        "competitive_angle_reason": "Outperforms unstructured chat apps.",
+        "positioning_statement": "For college students who need hackathon partners, this platform matches compatible teammates."
+    }
+    shape_mock = {
+        "personality_traits": [{"trait": "Driven", "justification": "Matches hackathon energy."}],
+        "traits_to_avoid": [{"trait": "Corporate", "reason": "Alienates students."}],
+        "naming_territories": [{"name": "Forge", "concept": "Building teams", "rationale": "Strong metaphor", "example_names": ["TeamForge", "HackCraft"]}],
+        "brand_voice": {"description": "Direct and energetic", "tone_characteristics": ["Energetic", "Clear"], "language_style": "Action-oriented"},
+        "tagline": "Build Teams. Win Hackathons.",
+        "message_hierarchy": {"primary_message": "Find your ideal hackathon team in seconds.", "supporting_messages": ["Skill matching"], "proof_or_reason_to_believe": "Instant verification"},
+        "shape_summary": "Energetic, student-first brand identity."
+    }
+    visualize_mock = {
+        "typography": {"primary_font_direction": "Inter", "secondary_font_direction": "JetBrains Mono", "typography_rationale": "Clean and technical."},
+        "color_direction": {"primary_colors": ["#1E293B - Deep Slate", "#2563EB - Precision Blue"], "supporting_colors": ["#F8FAFC - Pure Canvas"], "accent_color": "#10B981 - Verified Emerald", "color_mood": "Analytical and Focused", "color_rationale": "High contrast academic palette."},
+        "composition": {"layout_principles": ["Grid alignment"], "spacing_character": "Modular density", "visual_hierarchy": "Skill priority", "composition_rationale": "Reduces cognitive load."},
+        "symbols_and_graphics": {"symbol_direction": "Interlocking nodes", "shape_language": "Rounded 6px", "iconography_direction": "Monoline vectors", "graphic_motifs": ["Node networks"], "rationale": "Skill network metaphor."},
+        "imagery": {"photography_or_illustration_style": "Authentic student photojournalism", "subject_direction": "Students in hackathon builds", "lighting_or_mood": "Ambient crisp light", "image_characteristics": ["Genuine expressions"], "imagery_rationale": "Peer trust."},
+        "concepts_to_avoid": [{"concept": "Generic 3D avatars", "reason": "Weakens technical authenticity."}],
+        "visual_summary": "Clean, structural aesthetic rooted in academic infrastructure."
+    }
+    challenge_mock = {
+        "cliches_detected": [{"area": "Voice", "current_choice": "Instant matching", "why_generic": "Overused term", "stronger_alternative": "Verified skill pairing"}],
+        "contradictions": [],
+        "audience_mismatches": [],
+        "weak_assumptions": [{"assumption": "Students verify skills voluntarily", "risk": "Incomplete profiles", "validation_needed": "GitHub integration"}],
+        "distinctiveness_gaps": [],
+        "consistency_findings": [],
+        "challenge_summary": "Strong core foundation with minor unverified assumptions.",
+        "recommended_changes": ["Add GitHub OAuth for automated skill proof."]
+    }
+
+    response = client.post("/api/deliver", json={
+        "discover_context": discover_mock,
+        "position_context": position_mock,
+        "shape_context": shape_mock,
+        "visualize_context": visualize_mock,
+        "challenge_context": challenge_mock
+    })
+    assert response.status_code == 200
+    data = response.json()
+
+    required_deliver_fields = [
+        "brand_name",
+        "one_line_pitch",
+        "brand_summary",
+        "hero_headline",
+        "hero_subheadline",
+        "value_proposition",
+        "product_description",
+        "primary_cta",
+        "target_audience_summary",
+        "core_problem",
+        "tone_of_voice",
+        "messaging_guidelines",
+        "brand_personality",
+        "launch_announcement",
+        "social_media_posts",
+        "visual_identity_summary",
+        "key_brand_pillars",
+        "key_risks",
+        "risk_mitigation_summary",
+        "next_steps"
+    ]
+    for field in required_deliver_fields:
+        assert field in data
+        assert data[field] is not None
+
+
 
 
 

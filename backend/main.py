@@ -9,13 +9,15 @@ from models import (
     PositionRequest, PositionResponse,
     ShapeRequest, ShapeResponse,
     VisualizeRequest, VisualizeResponse,
-    ChallengeRequest, ChallengeResponse
+    ChallengeRequest, ChallengeResponse,
+    DeliverRequest, DeliverResponse
 )
 from services.discover import analyze_idea
 from services.position import analyze_position
 from services.shape import analyze_shape
 from services.visualize import analyze_visualize
 from services.challenge import analyze_challenge
+from services.deliver import analyze_deliver
 
 # Load environment variables from .env file if present
 load_dotenv()
@@ -25,8 +27,8 @@ logger = logging.getLogger("brandforge.main")
 
 app = FastAPI(
     title="BrandForge AI Backend",
-    description="Phase 1, 2, 3, 4 & 5 API for transforming rough product ideas into structured discovery, positioning, verbal identity, visual strategy, and critical challenge evaluation.",
-    version="1.5.0"
+    description="Phases 1-6 API for transforming rough product ideas into structured discovery, positioning, verbal identity, visual strategy, critical challenge evaluation, and final launch-ready Brand Kit delivery.",
+    version="1.6.0"
 )
 
 # CORS Configuration
@@ -42,9 +44,9 @@ app.add_middleware(
 def read_root():
     return {
         "app": "BrandForge API",
-        "phase": 5,
+        "phase": 6,
         "status": "online",
-        "stages": ["Discover", "Position", "Shape", "Visualize", "Challenge"]
+        "stages": ["Discover", "Position", "Shape", "Visualize", "Challenge", "Deliver"]
     }
 
 @app.post(
@@ -276,10 +278,73 @@ async def generate_challenge(payload: ChallengeRequest):
             detail="AI challenge evaluation service encountered an error processing your request. Please try again."
         )
 
+@app.post(
+    "/api/deliver",
+    response_model=DeliverResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Synthesize accumulated outputs from Phases 1-5 into a complete, launch-ready Brand Kit"
+)
+@app.post(
+    "/deliver",
+    response_model=DeliverResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False
+)
+async def generate_deliver(payload: DeliverRequest):
+    if not payload.discover_context or not payload.discover_context.problem:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 1 Discover context is required for Deliver synthesis."
+        )
+    if not payload.position_context or not payload.position_context.category:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 2 Position context is required for Deliver synthesis."
+        )
+    if not payload.shape_context or not payload.shape_context.tagline:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 3 Shape context is required for Deliver synthesis."
+        )
+    if not payload.visualize_context or not payload.visualize_context.typography:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 4 Visualize context is required for Deliver synthesis."
+        )
+    if not payload.challenge_context or not payload.challenge_context.challenge_summary:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Valid Phase 5 Challenge context is required for Deliver synthesis."
+        )
+
+    try:
+        result = analyze_deliver(
+            payload.discover_context,
+            payload.position_context,
+            payload.shape_context,
+            payload.visualize_context,
+            payload.challenge_context
+        )
+        logger.info(f"[BACKEND SUCCESS] Returning DeliverResponse: {result.model_dump_json()}")
+        return result
+    except ValueError as val_err:
+        logger.warning(f"Validation or configuration error in deliver service: {val_err}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(val_err)
+        )
+    except Exception as exc:
+        logger.error(f"Unexpected error during deliver synthesis: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="AI deliver synthesis service encountered an error processing your request. Please try again."
+        )
+
 
 if __name__ == "__main__":
     import uvicorn
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "8000"))
     uvicorn.run("main:app", host=host, port=port, reload=True)
+
 

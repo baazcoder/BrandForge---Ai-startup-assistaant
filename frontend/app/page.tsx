@@ -8,17 +8,20 @@ import { PositionSection } from "../components/PositionSection";
 import { ShapeSection } from "../components/ShapeSection";
 import { VisualizeSection } from "../components/VisualizeSection";
 import { ChallengeSection } from "../components/ChallengeSection";
+import { DeliverSection } from "../components/DeliverSection";
 import {
   discoverIdea,
   generatePosition,
   generateShape,
   generateVisualize,
   generateChallenge,
+  generateDeliver,
   DiscoverResponse,
   PositionResponse,
   ShapeResponse,
   VisualizeResponse,
-  ChallengeResponse
+  ChallengeResponse,
+  DeliverResponse
 } from "../lib/api";
 
 export default function Home() {
@@ -46,6 +49,11 @@ export default function Home() {
   const [isChallengeLoading, setIsChallengeLoading] = useState<boolean>(false);
   const [challengeError, setChallengeError] = useState<string | null>(null);
 
+  // Phase 6 Deliver States
+  const [deliverResults, setDeliverResults] = useState<DeliverResponse | null>(null);
+  const [isDeliverLoading, setIsDeliverLoading] = useState<boolean>(false);
+  const [deliverError, setDeliverError] = useState<string | null>(null);
+
   const handleSubmit = async (idea: string) => {
     setIsLoading(true);
     setError(null);
@@ -57,6 +65,8 @@ export default function Home() {
     setVisualizeError(null);
     setChallengeResults(null);
     setChallengeError(null);
+    setDeliverResults(null);
+    setDeliverError(null);
 
     try {
       const data = await discoverIdea(idea);
@@ -173,6 +183,30 @@ export default function Home() {
     }
   };
 
+  const handleBuildDeliver = async () => {
+    if (!results || !positionResults || !shapeResults || !visualizeResults || !challengeResults) return;
+    setIsDeliverLoading(true);
+    setDeliverError(null);
+
+    try {
+      const dlvData = await generateDeliver(results, positionResults, shapeResults, visualizeResults, challengeResults);
+      setDeliverResults(dlvData);
+      setTimeout(() => {
+        const el = document.getElementById("deliver-stage-section");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    } catch (err: unknown) {
+      console.error("Deliver workflow error:", err);
+      if (err instanceof Error) {
+        setDeliverError(err.message);
+      } else {
+        setDeliverError("An unexpected error occurred while compiling your final brand kit.");
+      }
+    } finally {
+      setIsDeliverLoading(false);
+    }
+  };
+
   const handleProceedToVisualize = () => {
     setTimeout(() => {
       const el = document.getElementById("visualize-stage-section");
@@ -191,21 +225,32 @@ export default function Home() {
     }, 50);
   };
 
+  const handleProceedToDeliver = () => {
+    setTimeout(() => {
+      const el = document.getElementById("deliver-stage-section");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 50);
+  };
+
   const handleReset = () => {
     setResults(null);
     setPositionResults(null);
     setShapeResults(null);
     setVisualizeResults(null);
     setChallengeResults(null);
+    setDeliverResults(null);
     setError(null);
     setPositionError(null);
     setShapeError(null);
     setVisualizeError(null);
     setChallengeError(null);
+    setDeliverError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const activeStage = challengeResults ? 5 : (visualizeResults ? 4 : (shapeResults ? 3 : (positionResults ? 2 : 1)));
+  const activeStage = deliverResults ? 6 : (challengeResults ? 5 : (visualizeResults ? 4 : (shapeResults ? 3 : (positionResults ? 2 : 1))));
 
   return (
     <div className="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
@@ -269,6 +314,21 @@ export default function Home() {
                   onBuildChallenge={handleBuildChallenge}
                   isLoading={isChallengeLoading}
                   error={challengeError}
+                  onProceedToDeliver={handleProceedToDeliver}
+                />
+              )}
+
+              {positionResults && shapeResults && visualizeResults && challengeResults && (
+                <DeliverSection
+                  discoverContext={results}
+                  positionContext={positionResults}
+                  shapeContext={shapeResults}
+                  visualizeContext={visualizeResults}
+                  challengeContext={challengeResults}
+                  deliverData={deliverResults}
+                  onBuildDeliver={handleBuildDeliver}
+                  isLoading={isDeliverLoading}
+                  error={deliverError}
                 />
               )}
             </>
@@ -278,7 +338,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/60 py-6 text-center text-xs text-slate-500 font-mono">
-        BrandForge — AI-Powered Brand Strategy Engine (Phases 1–5: Discover, Position, Shape, Visualize & Challenge)
+        BrandForge — AI-Powered Brand Strategy Engine (Phases 1–6: Discover, Position, Shape, Visualize, Challenge & Deliver)
       </footer>
     </div>
   );
